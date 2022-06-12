@@ -19,7 +19,7 @@ contract TimeLock {
     );
 
     event Execute(
-        bytes indexed txId, 
+        bytes32 indexed txId, 
         address indexed _target, 
         uint _value,
         string indexed _func, 
@@ -28,7 +28,7 @@ contract TimeLock {
     );
 
     event Cancel(
-        bytes indexed txId, 
+        bytes32 indexed txId, 
         address indexed _target, 
         uint _value,
         string indexed _func, 
@@ -43,25 +43,13 @@ contract TimeLock {
 
     receive() external payable {}
 
-    function getTxId (
-        address _target,
-        uint _value,
-        string calldata _func,
-        bytes calldata _data,
-        uint _timestamp
-    ) public pure returns (bytes32 txId) {
-        return keccak256(
-            abi.encode(
-                _target, _value, _func, _data, _timestamp
-            )
-        );
-    }
+    /* MAIN FUNCTIONS */
 
     function queue(
         address _target,
         uint _value,
-        string calldata _func,
-        bytes calldata _data,
+        string memory _func,
+        bytes memory _data,
         uint _timestamp
     ) external {
         require(msg.sender == owner, 'Only owner can call this function');
@@ -74,8 +62,8 @@ contract TimeLock {
 
         // Check if timestamp is within min and max delays
         require(
-            _timestamp < block.timestamp + MIN_DELAY ||
-            _timestamp > block.timestamp + MAX_DELAY, 
+            _timestamp > block.timestamp + MIN_DELAY ||
+            _timestamp < block.timestamp + MAX_DELAY, 
             'Timestamp not within max and min delays'
         );
 
@@ -89,8 +77,8 @@ contract TimeLock {
     function execute(
         address _target,
         uint _value,
-        string calldata _func,
-        bytes calldata _data,
+        string memory _func,
+        bytes memory _data,
         uint _timestamp
     ) external payable returns (bytes memory) {
         require(msg.sender == owner, 'Only owner can call this function');
@@ -114,7 +102,7 @@ contract TimeLock {
         // Check transaction
         require(ok, 'Transaction not successful');
         emit Execute(txId, _target, _value, _func, _data, _timestamp);
-j
+
         // Change queue state
         queued[txId] = false;
 
@@ -124,8 +112,8 @@ j
     function cancel(
         address _target,
         uint _value,
-        string calldata _func,
-        bytes calldata _data,
+        string memory _func,
+        bytes memory _data,
         uint _timestamp
     ) external {
         require(msg.sender == owner, 'Only the owner can call this function');
@@ -142,11 +130,31 @@ j
         emit Cancel(txId,_target, _value, _func, _data, _timestamp);
     }
 
+    /* GETTERS */
+
+    function getTimestamp(uint time) public view returns (uint) {
+        return block.timestamp + time;
+    }
+
+    function getTxId (
+        address _target,
+        uint _value,
+        string memory _func,
+        bytes memory _data,
+        uint _timestamp
+    ) public pure returns (bytes32 txId) {
+        return keccak256(
+            abi.encode(
+                _target, _value, _func, _data, _timestamp
+            )
+        );
+    }
+
     function getFunctionData(
-        bytes calldata _data, 
-        string calldata _func
+        bytes memory _data, 
+        string memory _func
     ) 
-        public pure returns (bytes) 
+        public pure returns (bytes memory) 
     {
         bytes memory data;
         if (bytes(_func).length > 0) {
@@ -162,6 +170,7 @@ j
 
 contract TestTimeLock {
     address public timeLock;
+    uint public sum;
 
     constructor(address _timeLock) {
         timeLock = _timeLock;
@@ -169,6 +178,7 @@ contract TestTimeLock {
 
     function test() external {
         require(msg.sender == timeLock);
+        sum += 1;
         // execute code here: upgrades, transfers, switching oracles
     }
 }
