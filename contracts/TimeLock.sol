@@ -109,12 +109,12 @@ contract TimeLock {
         bytes memory data = getFunctionData(_data, _func);
 
         // Execute Transaction
-        (bool ok, bytes memory res) = _target.call{value: value}(data);
+        (bool ok, bytes memory res) = _target.call{value: _value}(data);
 
         // Check transaction
         require(ok, 'Transaction not successful');
         emit Execute(txId, _target, _value, _func, _data, _timestamp);
-
+j
         // Change queue state
         queued[txId] = false;
 
